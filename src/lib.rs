@@ -1,12 +1,13 @@
 extern crate rustc_serialize;
 
 mod keybase {
-	use rustc_serialize::json::Json;
+	use rustc_serialize::json;
 	use std::process::Command;
 	use std::env;
 	use std::path::Path;
 	use std::fs::File;
 	use std::io::Read;
+	use std::collections::HashMap;
 
 	pub fn ensure_running() -> bool {
 		Command::new("keybase")
@@ -27,20 +28,35 @@ mod keybase {
 		return String::from_utf8(raw).expect("invalid output");
 	}
 
-	pub fn config_file() -> String {
-		match env::home_dir() {
-			Some(home) => Path::new(home.as_os_str())
-								.join(".config/keybase/config.json")
-								.to_str().unwrap().to_string(),
-			None => panic!("no home dir")
-		}
+	#[derive(RustcDecodable)]
+	pub struct Config {
+		pub current_user: String,
+		pub users: HashMap<String, String>
 	}
 
-	pub fn config_json() -> Json {
-		let mut file = File::open(config_file()).unwrap();
-		let mut data = String::new();
-		file.read_to_string(&mut data).unwrap();
+	impl Config {
+		pub fn new() -> Config {
+			let string = Config::config_json();
+			let config: Config = json::decode(&string).unwrap();
 
-		Json::from_str(&data).unwrap()
+			config
+		}
+
+		fn config_file() -> String {
+			match env::home_dir() {
+				Some(home) => Path::new(home.as_os_str())
+									.join(".config/keybase/config.json")
+									.to_str().unwrap().to_string(),
+				None => panic!("no home dir")
+			}
+		}
+
+		fn config_json() -> String {
+			let mut file = File::open(Config::config_file()).unwrap();
+			let mut data = String::new();
+			file.read_to_string(&mut data).unwrap();
+
+			data
+		}
 	}
 }
