@@ -5,6 +5,8 @@ mod keybase {
 	use std::process::Command;
 	use std::env;
 	use std::path::Path;
+	use std::fs::File;
+	use std::io::Read;
 
 	pub fn ensure_running() -> bool {
 		Command::new("keybase")
@@ -32,5 +34,13 @@ mod keybase {
 								.to_str().unwrap().to_string(),
 			None => panic!("no home dir")
 		}
+	}
+
+	pub fn config_json() -> Json {
+		let mut file = File::open(config_file()).unwrap();
+		let mut data = String::new();
+		file.read_to_string(&mut data).unwrap();
+
+		Json::from_str(&data).unwrap()
 	}
 }
